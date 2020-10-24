@@ -50,20 +50,29 @@ Cargo is installed
 
 Additionaly, you may use the following crates:
 
+- actix-web
+- actix-server
 - base64
 - clap
+- ecdsa
+- env_logger
 - futures
 - getopts
 - gotham
 - hyper
+- log
 - openssl
+- p256
+- rand
 - reqwest
 - rust-crypto
 - serde
 - serde_json
+- sha2
 - tokio
 - tokio-rustls
 - trust-dns-server
+- trust-dns-client
 
 ## C
 A standard GCC installation is available on the CI containers. Moreover, you may use the following libraries:
