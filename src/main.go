@@ -20,12 +20,6 @@ var opts struct {
 	} `positional-args:"yes" required:"true"`
 }
 
-// func wait_for_shutdown() {
-// 	// TODO:
-// 	// TCP port 5003
-// 	// GET /shutdown -> terminate application
-// }
-
 func init() {
 	fmt.Println("Started main")
 	flags.Parse(&opts)
@@ -39,10 +33,10 @@ func init() {
 }
 
 func main() {
-	// go wait_for_shutdown()
+	go waitForShutdown()
 	//start dns server + http in case of http challenge
 	go servDNS()
-	// go serv_http()
+	go servHttp()
 	// create account at ACME server
 	// POST to newaccount URL
 
