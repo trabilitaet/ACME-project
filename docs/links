@@ -1,6 +1,13 @@
 DNS:
-	https://medium.com/@openmohan/dns-basics-and-building-simple-dns-server-in-go-6cb8e1cfe461
-	https://ops.tips/blog/raw-dns-resolver-in-go/
-	https://www.wikiwand.com/en/Domain_Name_System
+	* https://medium.com/@openmohan/dns-basics-and-building-simple-dns-server-in-go-6cb8e1cfe461
+	* https://ops.tips/blog/raw-dns-resolver-in-go/
+	* https://www.wikiwand.com/en/Domain_Name_System
+	* example:
+		- https://github.com/miekg/exdns/blob/master/reflect/reflect.go
 go flags:
-	https://github.com/jessevdk/go-flags
+	* https://github.com/jessevdk/go-flags
+concurrency in go:
+	* https://medium.com/rungo/running-multiple-http-servers-in-go-d15300f4e59f
+	* https://golangbot.com/goroutines/
+types and interfaces in go:
+	* https://travix.io/type-embedding-in-go-ba40dd4264df
