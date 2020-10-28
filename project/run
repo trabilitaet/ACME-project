@@ -2,6 +2,6 @@
 DIRECTORY=$(dirname "$0")
 echo "Changing to ${DIRECTORY}"
 cd  "$DIRECTORY" || exit 1
-
+pwd
 echo "Run your project here."
-go run main.go serv-dns.go serv-http.go $@
+go run ../src/main.go ../src/serv-dns.go ../src/serv-http.go $@
