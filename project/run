@@ -1,7 +1,9 @@
 #!/bin/bash
 DIRECTORY=$(dirname "$0")
+PROJROOT=$(git rev-parse --show-toplevel)
 echo "Changing to ${DIRECTORY}"
 cd  "$DIRECTORY" || exit 1
 pwd
 echo "Run your project here."
-go run ../src/main.go ../src/serv-dns.go ../src/serv-http.go $@
+cd "$PROJROOT"
+go run src/main.go src/serv-dns.go src/serv-http.go $@
