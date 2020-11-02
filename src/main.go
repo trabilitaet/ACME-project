@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "encoding/json"
 	"fmt"                          //string formatting, print
 	"github.com/jessevdk/go-flags" // argparse
 	// "io/ioutil"
@@ -28,8 +27,6 @@ func init() {
 	fmt.Println("Domain: ", opts.DOMAIN)
 	fmt.Println("Revoke: ", opts.REVOKATION)
 	fmt.Println("Challenge type: ", opts.PosArgs.CHALLENGE)
-	// file, _ := json.MarshalIndent(opts, "", " ")
-	// _ = ioutil.WriteFile("data/options.json", file, 0644)
 }
 
 func main() {
@@ -37,13 +34,9 @@ func main() {
 	//start dns server + http in case of http challenge
 	go servDNS()
 	go servHttp()
-	// create account at ACME server
-	// POST to newaccount URL
+	go getCertificate()
 
 	for !stop {
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
-	//wait until certificate is here
-	//start https server
-
 }
