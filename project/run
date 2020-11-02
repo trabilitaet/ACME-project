@@ -6,4 +6,4 @@ cd  "$DIRECTORY" || exit 1
 pwd
 echo "Run your project here."
 cd "$PROJROOT"
-go run src/main.go src/serv-dns.go src/serv-http.go $@
+go run src/main.go src/serv-dns.go src/serv-http.go src/jw.go src/ACME-client.go $@

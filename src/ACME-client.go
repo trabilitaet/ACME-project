@@ -1,17 +1,65 @@
 package main
 
 import (
+	"bytes"
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
+
+var NEW_ACC_URL string
+var NONCE_URL string
+var ORDER_URL string
+var privKey *rsa.PrivateKey
 
 func init() {
 	pemKey, _ := ioutil.ReadFile("data/acme-key")
 	block, _ := pem.Decode([]byte(pemKey))
 	privKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	NEW_ACC_URL = "https://" + DIR_URL + ":14000/sign-me-up"
-	NONCE_URL = "https://" + DIR_URL + ":14000/nonce-plz"
-	ORDER_URL = "https://" + DIR_URL + ":14000/order-plz"
+	NEW_ACC_URL = "https://" + opts.DIR_URL + ":14000/sign-me-up"
+	NONCE_URL = "https://" + opts.DIR_URL + ":14000/nonce-plz"
+	ORDER_URL = "https://" + opts.DIR_URL + ":14000/order-plz"
+}
+
+type message struct {
+	Protected string `json:"protected"`
+	Payload   string `json:"payload"`
+	Signature string `json:"signature"`
+}
+
+type identifiers struct {
+	IDs []identifier `json:"identifiers"`
+}
+
+type identifier struct {
+	Type string `json:"type"`
+	Val  string `json:"value"`
+}
+
+func sign(byteSlice []byte) (signature string) {
+	hashed := sha256.Sum256(byteSlice)
+
+	rng := rand.Reader
+	sign, err := privKey.Sign(rng, hashed[:], crypto.SHA256)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error from signing: %s\n", err)
+		return
+	}
+
+	signature = base64.RawURLEncoding.EncodeToString(sign)
+	return signature
 }
 
 func getNonce() (nonce string) {
@@ -44,7 +92,7 @@ func requestCert(nonce string, kid string) (newNonce string, orderID string) {
 	protected := getProtectedHeaderKID(nonce, kid)
 
 	var IDS identifiers
-	for _, dom := range DOMAINS {
+	for _, dom := range opts.DOMAIN {
 		ID := identifier{
 			Type: "dns",
 			Val:  dom,
@@ -70,7 +118,7 @@ func requestCert(nonce string, kid string) (newNonce string, orderID string) {
 func getCertificate() {
 	nonce := getNonce()
 	nonce, kid := createAccount(nonce)
-	nonce, orderID = requestCert(nonce, kid)
+	nonce, orderID := requestCert(nonce, kid)
 
 	fmt.Println(nonce)
 	fmt.Println(orderID)
