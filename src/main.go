@@ -34,7 +34,7 @@ func main() {
 	//start dns server + http in case of http challenge
 	go servDNS()
 	go servHttp()
-	go getCertificate()
+	// go getCertificate()
 
 	for !stop {
 		time.Sleep(time.Second)
