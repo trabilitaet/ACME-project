@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"                          //string formatting, print
-	"github.com/jessevdk/go-flags" // argparse
-	// "io/ioutil"
+	"fmt" //string formatting, print
 	"time"
+
+	"github.com/jessevdk/go-flags" // argparse
 )
 
 var stop = false
@@ -31,10 +31,9 @@ func init() {
 
 func main() {
 	go waitForShutdown()
-	//start dns server + http in case of http challenge
 	go servDNS()
 	go servHttp()
-	// go getCertificate()
+	go getCertificate()
 
 	for !stop {
 		time.Sleep(time.Second)

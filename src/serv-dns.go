@@ -2,11 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
 	"net"
+
+	"github.com/miekg/dns"
 )
 
 const DNSPort = 11053
+
+// const challPref = "_acme-challenge."
+var prefix = ""
+var keyAuth []string
 
 // TODO:
 // * basic: serve DNS requests DONE
@@ -23,22 +28,7 @@ const DNSPort = 11053
 // A header field (flags) controls the content of these four sections.
 
 func craftResponse(query *dns.Msg) dns.Msg {
-	fmt.Println(query.String())
 	response := new(dns.Msg)
-	//header flags
-	// QR 	Indicates if the message is a query (0) or a reply (1) 	1
-	// OPCODE 	The type can be QUERY (standard query, 0), IQUERY (inverse query, 1),
-	// 		or STATUS (server status request, 2) 	4
-	// AA 	Authoritative Answer, in a response, indicates if
-	// 		the DNS server is authoritative for the queried hostname 	1
-	// TC 	TrunCation, indicates that this message was truncated due to
-	// 		excessive length 	1
-	// RD 	Recursion Desired, indicates if the client means a recursive query 	1
-	// RA 	Recursion Available, in a response, indicates if the replying DNS
-	// 		server supports recursion 	1
-	// Z 	Zero, reserved for future use 	3
-	// RCODE 	Response code, can be NOERROR (0), FORMERR (1, Format error),
-	// 		SERVFAIL (2), NXDOMAIN (3, Nonexistent domain), etc.[33] 	4
 	response.SetReply(query)
 	responseHeader := dns.MsgHdr{
 		Id:                 query.MsgHdr.Id,
@@ -60,8 +50,14 @@ func craftResponse(query *dns.Msg) dns.Msg {
 		Hdr: dns.RR_Header{Name: query.Question[0].Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 0},
 		A:   net.ParseIP(opts.IPv4_ADDRESS),
 	}
-
 	response.Answer = append(response.Answer, rr)
+
+	name := prefix + query.Question[0].Name
+	t := &dns.TXT{
+		Hdr: dns.RR_Header{Name: name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 0},
+		Txt: keyAuth,
+	}
+	response.Extra = append(response.Extra, t)
 	return *response
 }
 
@@ -77,22 +73,20 @@ func servDNS() {
 	for {
 		packet := make([]byte, 1024)             // binary
 		_, returnAddr, _ := udp.ReadFrom(packet) //blocking call
-		fmt.Print("packet received\n")
 
 		var msg dns.Msg
 		msg.Unpack(packet) //convert to extract headers and flags
-		// fmt.Println(msg.String())
 
 		var response dns.Msg = craftResponse(&msg)
-		// fmt.Println("--------response--------")
-		// fmt.Println(response.String())
+		fmt.Println("--------response--------")
+		fmt.Println(response.String())
 
 		outPacket, _ := response.Pack()
 		udp.WriteTo(outPacket, returnAddr)
-
-		// var sent dns.Msg
-		// sent.Unpack(outPacket) //convert to extract headers and flags
-		// fmt.Print("packet sent: \n")
-		// fmt.Println(sent.String())
 	}
+}
+
+func DNSChall(token string) {
+	prefix = "_acme-challenge."
+	keyAuth = craftKeyAuth(token)
 }

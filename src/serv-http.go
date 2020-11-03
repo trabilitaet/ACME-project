@@ -19,20 +19,24 @@ func waitForShutdown() {
 	r.Run(":5003")
 }
 
-//TODO:
-// complete HTTPS challenges 'http-01'
-// TCP port 5002
 func servHttp() {
-
 	r := gin.Default()
-
-	// receive token
-	// place token for subsequent get ?
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
 
+	r.Run(":5002")
+}
+
+func HTTPChall(url string, token string) {
+	keyAuth = craftKeyAuth(token)
+	r := gin.Default()
+	r.GET(url, func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"token": keyAuth,
+		})
+	})
 	r.Run(":5002")
 }
