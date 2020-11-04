@@ -34,8 +34,6 @@ func getCertificate() {
 	nonce, kid := createAccount(nonce)
 	nonce, orderURL := requestCert(nonce, kid)
 	nonce, chall := getChallenges(nonce, kid, orderURL)
-	fmt.Println("Token: ")
-	fmt.Println(chall.Token)
 
 	if opts.PosArgs.CHALLENGE == "http01" {
 		go HTTPChall(chall.URL, chall.Token)
