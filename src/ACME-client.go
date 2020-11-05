@@ -30,13 +30,19 @@ func init() {
 }
 
 func getCertificate() {
+	fmt.Println("GETTING NONCE-------------")
 	nonce := getNonce()
+	fmt.Println("CREATING ACCOUNT-------------")
 	nonce, kid := createAccount(nonce)
+	fmt.Println("REQUESTING CERT-------------")
 	nonce, orderURL := requestCert(nonce, kid)
+	fmt.Println(orderURL)
+	fmt.Println("DOING CHALLENGES-------------")
 	nonce, finalize := doChallenges(nonce, kid, orderURL)
 
 	fmt.Println(finalize)
 
+	// fmt.Println("SUBMITTING CSR-------------")
 	// template := x509.CertificateRequest{
 	// 	// Raw:                      []byte // Complete ASN.1 DER content (CSR, signature algorithm and signature).
 	// 	// RawTBSCertificateRequest: []byte // Certificate request info part of raw ASN.1 DER content.

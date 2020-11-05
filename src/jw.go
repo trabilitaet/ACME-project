@@ -39,6 +39,7 @@ func getProtectedHeaderJWK(nonce string, url string) string {
 	})
 
 	protected := base64.RawURLEncoding.EncodeToString(jwsHeaderJSON)
+	// fmt.Println("Header: ", string(jwsHeaderJSON))
 	return protected
 }
 
@@ -51,5 +52,6 @@ func getProtectedHeaderKID(nonce string, kid string, URL string) string {
 	})
 
 	protected := base64.RawURLEncoding.EncodeToString(jwsHeaderJSON)
+	// fmt.Println("Header: ", string(jwsHeaderJSON))
 	return protected
 }

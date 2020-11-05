@@ -37,30 +37,48 @@ func getNonce() (nonce string) {
 	return nonce
 }
 
-func createAccount(nonce string) (newNonce string, kid string) {
-	protected := getProtectedHeaderJWK(nonce, NEW_ACC_URL)
-	payload := base64.RawURLEncoding.EncodeToString([]byte("{\"termsOfServiceAgreed\": true}"))
+func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce string, location string, body []byte) {
+	var protected64 string
+	fmt.Println("Using kid: ", kid)
+	if kid == "" {
+		fmt.Println("No kid, constructing JWK")
+		protected64 = getProtectedHeaderJWK(nonce, URL)
+	} else {
+		protected64 = getProtectedHeaderKID(nonce, kid, URL)
+	}
+	payload64 := base64.RawURLEncoding.EncodeToString(payload)
 
 	request := message{
-		Payload:   payload,
-		Protected: protected,
-		Signature: sign([]byte(protected + "." + payload)),
+		Payload:   payload64,
+		Protected: protected64,
+		Signature: sign([]byte(protected64 + "." + payload64)),
 	}
 	reqJSON, _ := json.Marshal(request)
-	resp, err := http.Post(NEW_ACC_URL, "application/jose+json", bytes.NewReader(reqJSON))
+	resp, err := http.Post(URL, "application/jose+json", bytes.NewReader(reqJSON))
 	if err != nil {
-		fmt.Println("ERROR creating account")
+		fmt.Println("ERROR posting to: ", URL)
 		fmt.Println(err)
+		fmt.Println("Body:--------------------------")
+		fmt.Println(string(body))
+		return
+	}
+
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return
 	}
 	newNonce = resp.Header.Get("Replay-Nonce")
-	kid = resp.Header.Get("Location")
-	return newNonce, kid
+	location = resp.Header.Get("Location")
+	return newNonce, location, body
+}
+
+func createAccount(nonce string) (newNonce string, kid string) {
+	payload := []byte("{\"termsOfServiceAgreed\": true}")
+	newNonce, location, _ := postAsGet(nonce, NEW_ACC_URL, payload, "")
+	return newNonce, location
 }
 
 func requestCert(nonce string, kid string) (newNonce string, orderURL string) {
-	protected := getProtectedHeaderKID(nonce, kid, ORDER_URL)
-
 	var IDS identifiers
 	for _, dom := range opts.DOMAIN {
 		ID := identifier{
@@ -71,85 +89,37 @@ func requestCert(nonce string, kid string) (newNonce string, orderURL string) {
 	}
 
 	IDJSON, _ := json.Marshal(IDS)
-	payload := base64.RawURLEncoding.EncodeToString(IDJSON)
-
-	request := message{
-		Payload:   payload,
-		Protected: protected,
-		Signature: sign([]byte(protected + "." + payload)),
-	}
-	reqJSON, _ := json.Marshal(request)
-	resp, err := http.Post(ORDER_URL, "application/jose+json", bytes.NewReader(reqJSON))
-	if err != nil {
-		fmt.Println("ERROR posting order")
-		fmt.Println(err)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("Body:")
-		fmt.Println(string(body))
-		return
-	}
-	newNonce = resp.Header.Get("Replay-Nonce")
-	orderURL = resp.Header.Get("Location")
-	return newNonce, orderURL
+	newNonce, location, _ := postAsGet(nonce, ORDER_URL, IDJSON, kid)
+	return newNonce, location
 }
 
 func doChallenges(nonce string, kid string, orderURL string) (newNonce string, fin string) {
-	protected := getProtectedHeaderKID(nonce, kid, orderURL)
-	payload := base64.RawURLEncoding.EncodeToString([]byte(""))
-	request := message{
-		Payload:   payload,
-		Protected: protected,
-		Signature: sign([]byte(protected + "." + payload)),
-	}
-	reqJSON, _ := json.Marshal(request)
-	resp, err := http.Post(orderURL, "application/jose+json", bytes.NewReader(reqJSON))
-	if err != nil {
-		fmt.Println("ERROR getting order")
-		fmt.Println("from: ", orderURL)
-		fmt.Println(err)
-		return
-	}
-	nonce = resp.Header.Get("Replay-Nonce")
+	newNonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
 
-	body, _ := ioutil.ReadAll(resp.Body)
 	orders := order{}
-	json.Unmarshal(body, &orders)
+	json.Unmarshal(ordersJSON, &orders)
 	fmt.Println("Orders:")
-	fmt.Println(string(body))
+	// fmt.Println(orders)
 
 	var Tokens []string
 	var URLs []string
 	for index, _ := range orders.Authorizations {
 
-		auth := orders.Authorizations[index]
+		authURL := orders.Authorizations[index]
 
-		protected = getProtectedHeaderKID(nonce, kid, auth)
-		payload = base64.RawURLEncoding.EncodeToString([]byte(""))
-		request = message{
-			Payload:   payload,
-			Protected: protected,
-			Signature: sign([]byte(protected + "." + payload)),
-		}
-		reqJSON, _ = json.Marshal(request)
-		resp, err = http.Post(auth, "application/jose+json", bytes.NewReader(reqJSON))
-		if err != nil {
-			fmt.Println("ERROR getting auth")
-			fmt.Println(err)
-			return
-		}
-		nonce = resp.Header.Get("Replay-Nonce")
+		var authJSON []byte
+		newNonce, _, authJSON = postAsGet(newNonce, authURL, []byte(""), kid)
 
-		body, _ = ioutil.ReadAll(resp.Body)
 		authorization := authorization{}
-		json.Unmarshal(body, &authorization)
-		fmt.Printf("Challenges for auth %v", index)
-		fmt.Println(string(body))
+		json.Unmarshal(authJSON, &authorization)
+		fmt.Printf("Challenges for auth %v\n", index)
+		// fmt.Println(authorization) //print all challenges
 
 		//select appropriate challenge
-
 		if opts.PosArgs.CHALLENGE == "dns01" {
 			for _, c := range authorization.Challenges[:] {
 				if c.Type == "dns-01" {
+					fmt.Println(c)
 					Tokens = append(Tokens, c.Token)
 				}
 			}
@@ -158,6 +128,7 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 		if opts.PosArgs.CHALLENGE == "http01" {
 			for _, c := range authorization.Challenges[:] {
 				if c.Type == "http-01" {
+					fmt.Println(c)
 					Tokens = append(Tokens, c.Token)
 					URLs = append(URLs, c.URL)
 				}
@@ -167,7 +138,7 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 	}
 	go HTTPChall(URLs, Tokens)
 	time.Sleep(3 * time.Second)
-	return resp.Header.Get("Replay-Nonce"), orders.Finalize
+	return newNonce, orders.Finalize
 }
 
 func craftKeyAuth(token string) (keyAuth []string) {
