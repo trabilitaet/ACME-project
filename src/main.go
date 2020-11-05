@@ -32,7 +32,6 @@ func init() {
 func main() {
 	go waitForShutdown()
 	go servDNS()
-	go servHttp()
 	go getCertificate()
 
 	for !stop {

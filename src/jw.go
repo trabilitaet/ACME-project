@@ -23,7 +23,7 @@ func (b *byteBuffer) base64URL() string {
 	return code
 }
 
-func getProtectedHeaderJWK(nonce string) string {
+func getProtectedHeaderJWK(nonce string, url string) string {
 	e := byteBufferFromUInt(uint64(privKey.PublicKey.E)).base64URL()
 	n := base64.RawURLEncoding.EncodeToString(privKey.PublicKey.N.Bytes())
 
@@ -35,7 +35,7 @@ func getProtectedHeaderJWK(nonce string) string {
 			E:   e,
 		},
 		Nonce: nonce,
-		URL:   NEW_ACC_URL,
+		URL:   url,
 	})
 
 	protected := base64.RawURLEncoding.EncodeToString(jwsHeaderJSON)

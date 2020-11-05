@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,24 +21,30 @@ func waitForShutdown() {
 	r.Run(":5003")
 }
 
-func servHttp() {
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+// func servHttp() {
+// 	r := gin.Default()
+// 	r.GET("/ping", func(c *gin.Context) {
+// 		c.JSON(200, gin.H{
+// 			"message": "pong",
+// 		})
+// 	})
 
-	r.Run(":5002")
-}
+// 	r.Run(":5002")
+// }
 
-func HTTPChall(url string, token string) {
-	keyAuth = craftKeyAuth(token)
+func HTTPChall(urls []string, tokens []string) {
 	r := gin.Default()
-	r.GET(url, func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"token": keyAuth,
+	fmt.Println("starting http server")
+
+	for i, url := range urls {
+		keyAuth := craftKeyAuth(tokens[i])
+		fmt.Println("serving at: ", url[14:])
+		r.GET(url[14:], func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"token": keyAuth,
+			})
 		})
-	})
+	}
+
 	r.Run(":5002")
 }

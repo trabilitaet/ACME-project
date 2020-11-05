@@ -86,7 +86,7 @@ func servDNS() {
 	}
 }
 
-func DNSChall(token string) {
+func DNSChall(token []string) {
 	prefix = "_acme-challenge."
-	keyAuth = craftKeyAuth(token)
+	keyAuth = craftKeyAuth(token[0])
 }

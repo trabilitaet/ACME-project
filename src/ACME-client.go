@@ -33,18 +33,67 @@ func getCertificate() {
 	nonce := getNonce()
 	nonce, kid := createAccount(nonce)
 	nonce, orderURL := requestCert(nonce, kid)
-	nonce, chall := getChallenges(nonce, kid, orderURL)
+	nonce, finalize := doChallenges(nonce, kid, orderURL)
 
-	if opts.PosArgs.CHALLENGE == "http01" {
-		go HTTPChall(chall.URL, chall.Token)
-	}
-	if opts.PosArgs.CHALLENGE == "dns01" {
-		go DNSChall(chall.Token)
-	}
-	//create(?)/SUBMIT CSR-------------------------------------
-	// crypto/x509
-	//  func CreateCertificateRequest
-	// POST /acme/order/TOlocE8rfgo/finalize
+	fmt.Println(finalize)
+
+	// template := x509.CertificateRequest{
+	// 	// Raw:                      []byte // Complete ASN.1 DER content (CSR, signature algorithm and signature).
+	// 	// RawTBSCertificateRequest: []byte // Certificate request info part of raw ASN.1 DER content.
+	// 	// RawSubjectPublicKeyInfo:  []byte // DER encoded SubjectPublicKeyInfo.
+	// 	// RawSubject:               []byte // DER encoded Subject.
+	// 	// Version:            int
+	// 	// Signature:          []byte
+	// 	SignatureAlgorithm: x509.SHA256WithRSA,
+	// 	PublicKeyAlgorithm: x509.RSA,
+	// 	PublicKey:          privKey.PublicKey,
+
+	// 	Subject: pkix.Name{
+	// 		CommonName:         opts.DOMAIN[0],
+	// 		Country:            []string{"CH"},
+	// 		Organization:       []string{"project"},
+	// 		OrganizationalUnit: []string{"acme"},
+	// 		Locality:           []string{"ZH"},
+	// 		Province:           []string{"ZH"},
+	// 	},
+
+	// 	// Attributes: []pkix.AttributeTypeAndValueSET
+	// 	// Extensions: []pkix.Extension
+	// 	// ExtraExtensions: []pkix.Extension
+	// 	DNSNames: opts.DOMAIN,
+	// 	// EmailAddresses: []string
+	// 	// IPAddresses:    []net.IP
+	// 	// URIs:           []*url.URL // Go 1.10
+	// }
+
+	// //create DER encoded CSR
+	// csr, _ := x509.CreateCertificateRequest(rand.Reader, &template, privKey)
+	// // pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
+
+	// fmt.Println(kid)
+	// protected := getProtectedHeaderKID(nonce, kid, finalize)
+	// csrJSON, _ := json.Marshal(CSRencoded{csr})
+	// payload := base64.RawURLEncoding.EncodeToString(csrJSON)
+
+	// request := message{
+	// 	Payload:   payload,
+	// 	Protected: protected,
+	// 	Signature: sign([]byte(protected + "." + payload)),
+	// }
+	// reqJSON, _ := json.Marshal(request)
+	// fmt.Println(string(reqJSON))
+	// resp, err := http.Post(finalize, "application/jose+json", bytes.NewReader(reqJSON))
+	// if err != nil {
+	// 	fmt.Println("ERROR posting order")
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// fmt.Println(resp)
+
+	// body, _ := ioutil.ReadAll(resp.Body)
+	// fmt.Println("Body:")
+	// fmt.Println(string(body))
+	// fmt.Println(string(reqJSON))
 
 	//DOWNLOAD CERTIFICATE-------------------------------------
 	// sends a POST-as-GET request to the certificate URL

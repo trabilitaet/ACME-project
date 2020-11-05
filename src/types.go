@@ -60,3 +60,7 @@ type protectedHeaderKID struct {
 type byteBuffer struct {
 	data []byte
 }
+
+type CSRencoded struct {
+	CSR []byte `json:"csr"`
+}
