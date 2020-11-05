@@ -39,7 +39,7 @@ func getNonce() (nonce string) {
 
 func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce string, location string, body []byte) {
 	var protected64 string
-	fmt.Println("Using kid: ", kid)
+	// fmt.Println("Using kid: ", kid)
 	if kid == "" {
 		fmt.Println("No kid, constructing JWK")
 		protected64 = getProtectedHeaderJWK(nonce, URL)
@@ -87,7 +87,6 @@ func requestCert(nonce string, kid string) (newNonce string, orderURL string) {
 		}
 		IDS.IDs = append(IDS.IDs, ID)
 	}
-
 	IDJSON, _ := json.Marshal(IDS)
 	newNonce, location, _ := postAsGet(nonce, ORDER_URL, IDJSON, kid)
 	return newNonce, location
@@ -105,10 +104,8 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 	var URLs []string
 	for index, _ := range orders.Authorizations {
 
-		authURL := orders.Authorizations[index]
-
 		var authJSON []byte
-		newNonce, _, authJSON = postAsGet(newNonce, authURL, []byte(""), kid)
+		newNonce, _, authJSON = postAsGet(newNonce, orders.Authorizations[index], []byte(""), kid)
 
 		authorization := authorization{}
 		json.Unmarshal(authJSON, &authorization)
@@ -123,7 +120,6 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 					Tokens = append(Tokens, c.Token)
 				}
 			}
-			DNSChall(Tokens)
 		}
 		if opts.PosArgs.CHALLENGE == "http01" {
 			for _, c := range authorization.Challenges[:] {
@@ -134,10 +130,15 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 				}
 			}
 		}
-
 	}
-	go HTTPChall(URLs, Tokens)
-	time.Sleep(3 * time.Second)
+	if opts.PosArgs.CHALLENGE == "dns01" {
+		DNSChall(Tokens)
+	} else {
+		go HTTPChall(URLs, Tokens)
+		//wait until http server started
+		time.Sleep(5 * time.Second)
+	}
+
 	return newNonce, orders.Finalize
 }
 

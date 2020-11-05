@@ -4,10 +4,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 var NEW_ACC_URL string
@@ -42,6 +44,22 @@ func getCertificate() {
 
 	fmt.Println(finalize)
 
+	time.Sleep(10 * time.Second)
+	fmt.Println("getting challenge status: ")
+	nonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
+	orders := order{}
+	json.Unmarshal(ordersJSON, &orders)
+	// fmt.Println("Orders:")
+	// fmt.Println(orders)
+	for index, _ := range orders.Authorizations {
+		var authJSON []byte
+		nonce, _, authJSON = postAsGet(nonce, orders.Authorizations[index], []byte(""), kid)
+
+		authorization := authorization{}
+		json.Unmarshal(authJSON, &authorization)
+		fmt.Printf("Challenges for auth %v\n", index)
+		fmt.Println(authorization) //print all challenges
+	}
 	// fmt.Println("SUBMITTING CSR-------------")
 	// template := x509.CertificateRequest{
 	// 	// Raw:                      []byte // Complete ASN.1 DER content (CSR, signature algorithm and signature).
