@@ -32,7 +32,7 @@ func init() {
 func main() {
 	go waitForShutdown()
 	go servDNS()
-	// go getCertificate()
+	go getCertificate()
 
 	for !stop {
 		time.Sleep(time.Second)

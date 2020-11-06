@@ -191,11 +191,11 @@ func sendCSR(nonce string, kid string, finalize string) (newNonce string) {
 	csr, _ := x509.CreateCertificateRequest(rand.Reader, &template, privKey)
 	// pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
 
-	csrJSON, _ := json.Marshal(CSRencoded{csr})
+	csr64 := base64.RawURLEncoding.EncodeToString(csr)
+	csrJSON, _ := json.Marshal(CSRencoded{csr64})
 	fmt.Println(string(csrJSON))
-	csr64 := base64.RawURLEncoding.EncodeToString(csrJSON)
-	fmt.Println(csr64)
-	newNonce, _, body := postAsGet(nonce, finalize, []byte(csr64), kid)
+	newNonce, _, body := postAsGet(nonce, finalize, csrJSON, kid)
+	fmt.Println("response:")
 	fmt.Println(string(body))
 	return newNonce
 }

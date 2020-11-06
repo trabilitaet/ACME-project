@@ -62,5 +62,5 @@ type byteBuffer struct {
 }
 
 type CSRencoded struct {
-	CSR []byte `json:"csr"`
+	CSR64 string `json:"csr"`
 }
