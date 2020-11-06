@@ -74,13 +74,15 @@ func servDNS() {
 	udp, _ := net.ListenUDP("udp", &addr)
 
 	// infinite loop to wait for requests
+	fmt.Println("DNS running on: ", addr)
 	for {
-		packet := make([]byte, 1024) // binary
+		packet := make([]byte, 1024)               // binary
+		_, returnAddr, err := udp.ReadFrom(packet) //blocking call
 		fmt.Println("received DNS request")
-		len, returnAddr, err := udp.ReadFrom(packet) //blocking call
-		if err != nil || len == 0 {
+		if err != nil {
 			fmt.Println(err)
 		} else {
+			fmt.Println(packet)
 			var msg dns.Msg
 			msg.Unpack(packet) //convert to extract headers and flags
 			fmt.Println(msg.String())
