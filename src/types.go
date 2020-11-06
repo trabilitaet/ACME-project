@@ -65,3 +65,12 @@ type byteBuffer struct {
 type CSRencoded struct {
 	CSR64 string `json:"csr"`
 }
+
+type DIR struct {
+	KeyChange  string `json:"keyChange"`
+	NewAccount string `json:"newAccount"`
+	NewOrder   string `json:"newOrder"`
+	NewNonce   string `json:"newNonce"`
+	RevokeCert string `json:"revokeCert"`
+	Meta       string `json:"meta"`
+}

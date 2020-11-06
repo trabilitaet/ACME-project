@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +16,6 @@ import (
 var NEW_ACC_URL string
 var NONCE_URL string
 var ORDER_URL string
-var ACME_DIR string
 
 var privKey *rsa.PrivateKey
 var tlsKey *rsa.PrivateKey
@@ -39,11 +39,21 @@ func ACMEinit() {
 	certpool.AddCert(pebbleCert)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{RootCAs: certpool, ServerName: "pebble"}
 
-	NEW_ACC_URL = opts.DIR_URL[:19] + ":14000/sign-me-up"
-	NONCE_URL = opts.DIR_URL[:19] + ":14000/nonce-plz"
+	resp, err := http.Get(opts.DIR_URL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting URLs: %s\n", err)
+		return
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	dir := DIR{}
+	json.Unmarshal(body, &dir)
+	fmt.Println(dir)
+
+	NEW_ACC_URL = dir.NewAccount
+	NONCE_URL = dir.NewNonce
 	fmt.Println("NONCE_URL:", NONCE_URL)
-	ORDER_URL = opts.DIR_URL[:19] + ":14000/order-plz"
-	ACME_DIR = opts.DIR_URL[:19] + ":14000/dir"
+	ORDER_URL = dir.NewOrder
 }
 
 func getCertificate() {
