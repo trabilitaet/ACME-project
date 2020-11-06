@@ -81,8 +81,7 @@ func getCertificate() {
 		}
 	}
 
-	if status {
-
+	if status == 1 {
 		nonce = sendCSR(nonce, kid, finalize)
 
 		fmt.Println("DOWNLOAD CERTIFICATE----------------------")
