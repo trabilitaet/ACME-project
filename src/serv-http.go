@@ -25,12 +25,12 @@ func waitForShutdown() {
 		stop = true
 	})
 
-	s.Run(opts.IPv4_ADDRESS + ":5003")
+	s.Run("0.0.0.0:5003")
 }
 
 func runner() {
 	for !stop {
-		httpRunner.Run(opts.IPv4_ADDRESS + ":5002")
+		httpRunner.Run("0.0.0.0:5002")
 	}
 }
 
@@ -54,6 +54,6 @@ func servHTTPS(certificate []byte) {
 		c.Data(200, "application/octet-stream", certificate)
 	})
 	for !stop {
-		s.Run(opts.IPv4_ADDRESS + ":5001")
+		s.Run("0.0.0.0:5001")
 	}
 }
