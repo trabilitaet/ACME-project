@@ -27,6 +27,8 @@ func init() {
 	fmt.Println("Domain: ", opts.DOMAIN)
 	fmt.Println("Revoke: ", opts.REVOKATION)
 	fmt.Println("Challenge type: ", opts.PosArgs.CHALLENGE)
+	ACMEinit()
+	HTTPinit()
 }
 
 func main() {

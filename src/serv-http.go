@@ -11,7 +11,7 @@ var url string
 var challengeRunning = true
 var httpRunner *gin.Engine
 
-func init() {
+func HTTPinit() {
 	httpRunner = gin.Default()
 	go runner()
 }

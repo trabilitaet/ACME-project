@@ -23,7 +23,7 @@ var challenges []challenge
 var orderURL string
 var certURL string
 
-func init() {
+func ACMEinit() {
 	pemData, _ := ioutil.ReadFile("data/acme-key")
 	block, _ := pem.Decode([]byte(pemData))
 	privKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
