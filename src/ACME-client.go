@@ -75,25 +75,31 @@ func getCertificate() {
 	status := 0
 	for i := 0; i < 15; i++ {
 		nonce, status = getStatus(nonce, kid)
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 		if status == 1 {
 			break
 		}
 	}
-	nonce = sendCSR(nonce, kid, finalize)
 
-	fmt.Println("DOWNLOAD CERTIFICATE----------------------")
-	nonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
-	nonce, status = getStatus(nonce, kid)
-	fmt.Println(string(ordersJSON))
-	nonce, _, newCertificate := postAsGet(nonce, certURL, []byte(""), kid)
-	fmt.Println("DOWNLOADING CERT FROM:", certURL)
-	// fmt.Println(string(newCertificate))
+	if status {
 
-	f, _ := os.Create("data/certificate.pem")
-	f.WriteString(string(newCertificate))
-	f.Close()
+		nonce = sendCSR(nonce, kid, finalize)
 
-	//START HTTPS SERVER--------------------------------------
-	go servHTTPS(newCertificate)
+		fmt.Println("DOWNLOAD CERTIFICATE----------------------")
+		nonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
+		nonce, status = getStatus(nonce, kid)
+		fmt.Println(string(ordersJSON))
+		nonce, _, newCertificate := postAsGet(nonce, certURL, []byte(""), kid)
+		fmt.Println("DOWNLOADING CERT FROM:", certURL)
+		// fmt.Println(string(newCertificate))
+
+		f, _ := os.Create("data/certificate.pem")
+		f.WriteString(string(newCertificate))
+		f.Close()
+
+		//START HTTPS SERVER--------------------------------------
+		go servHTTPS(newCertificate)
+	} else {
+		fmt.Println("CHALLENGE FAILED")
+	}
 }
