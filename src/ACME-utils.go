@@ -55,7 +55,7 @@ func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce s
 		Signature: sign([]byte(protected64 + "." + payload64)),
 	}
 	reqJSON, _ := json.Marshal(request)
-	fmt.Println("POST: ", string(reqJSON))
+	// fmt.Println("POST: ", string(reqJSON))
 	resp, err := http.Post(URL, "application/jose+json", bytes.NewReader(reqJSON))
 	if err != nil {
 		fmt.Println("ERROR posting to: ", URL)
