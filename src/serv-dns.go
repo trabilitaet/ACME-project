@@ -69,7 +69,7 @@ func craftResponse(query *dns.Msg) dns.Msg {
 func servDNS() {
 	addr := net.UDPAddr{
 		Port: DNSPort,
-		IP:   opts.IPv4_ADDRESS,
+		IP:   net.ParseIP(opts.IPv4_ADDRESS),
 	}
 	udp, _ := net.ListenUDP("udp", &addr)
 
