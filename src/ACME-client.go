@@ -54,8 +54,8 @@ func getCertificate() {
 	fmt.Println(finalize)
 
 	fmt.Println("SUBMITTING CSR-------------")
-	// time.Sleep(10 * time.Second)
-	// nonce = sendCSR(nonce, kid, finalize)
+	time.Sleep(10 * time.Second)
+	nonce = sendCSR(nonce, kid, finalize)
 
 	//DOWNLOAD CERTIFICATE-------------------------------------
 	// sends a POST-as-GET request to the certificate URL
