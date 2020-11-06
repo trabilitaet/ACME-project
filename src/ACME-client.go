@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -54,7 +55,6 @@ func getCertificate() {
 	fmt.Println(orderURL)
 	fmt.Println("DOING CHALLENGES-------------")
 	nonce, finalize := getChallenges(nonce, kid)
-
 	for _, challenge := range challenges {
 		nonce = doChallenge(nonce, challenge, kid)
 	}
@@ -75,27 +75,14 @@ func getCertificate() {
 	nonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
 	nonce, status = getStatus(nonce, kid)
 	fmt.Println(string(ordersJSON))
-
 	nonce, _, newCertificate := postAsGet(nonce, certURL, []byte(""), kid)
 	fmt.Println("DOWNLOADING CERT FROM:", certURL)
-	fmt.Println(string(newCertificate))
-	// sends a POST-as-GET request to the certificate URL
-	// POST /acme/cert/mAt3xBGaobw HTTP/1.1
-	//   Host: example.com
-	//   Content-Type: application/jose+json
-	//   Accept: application/pem-certificate-chain
+	// fmt.Println(string(newCertificate))
 
-	//   {
-	//     "protected": base64url({
-	//       "alg": "ES256",
-	//       "kid": "https://example.com/acme/acct/evOfKhNU60wg",
-	//       "nonce": "uQpSjlRb4vQVCjVYAyyUWg",
-	//       "url": "https://example.com/acme/cert/mAt3xBGaobw"
-	//     }),
-	//     "payload": "",
-	//     "signature": "nuSDISbWG8mMgE7H...QyVUL68yzf3Zawps"
-	//   } -> answer is certificate chain
+	f, _ := os.Create("data/certificate.pem")
+	f.WriteString(string(newCertificate))
+	f.Close()
 
 	//START HTTPS SERVER--------------------------------------
-	// go servHttps()
+	go servHTTPS(newCertificate)
 }

@@ -47,3 +47,13 @@ func HTTPChall(token string) {
 	})
 
 }
+
+func servHTTPS(certificate []byte) {
+	s := gin.Default()
+	s.GET("/", func(c *gin.Context) {
+		c.Data(200, "application/octet-stream", certificate)
+	})
+	for !stop {
+		s.Run(":5001")
+	}
+}
