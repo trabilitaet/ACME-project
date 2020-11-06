@@ -9,7 +9,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-const DNSPort = 11053
+const DNSPort = 10053
 
 // const challPref = "_acme-challenge."
 var prefix = ""
@@ -81,8 +81,8 @@ func servDNS() {
 		fmt.Println("received DNS request")
 		if err != nil {
 			fmt.Println(err)
-		} else {
 			fmt.Println(packet)
+		} else {
 			var msg dns.Msg
 			msg.Unpack(packet) //convert to extract headers and flags
 			fmt.Println(msg.String())
