@@ -20,7 +20,7 @@ func sign(byteSlice []byte) (signature string) {
 	hashed := sha256.Sum256(byteSlice)
 
 	rng := rand.Reader
-	sign, err := privKey.Sign(rng, hashed[:], crypto.SHA256)
+	sign, err := tlsKey.Sign(rng, hashed[:], crypto.SHA256)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error from signing: %s\n", err)
 		return
@@ -154,8 +154,8 @@ func doChallenge(nonce string, c challenge, kid string) (newNonce string) {
 }
 
 func craftKeyAuth(token string) (keyAuth string) {
-	e := byteBufferFromUInt(uint64(privKey.PublicKey.E)).base64URL()
-	n := base64.RawURLEncoding.EncodeToString(privKey.PublicKey.N.Bytes())
+	e := byteBufferFromUInt(uint64(tlsKey.PublicKey.E)).base64URL()
+	n := base64.RawURLEncoding.EncodeToString(tlsKey.PublicKey.N.Bytes())
 
 	JWK := jwkPubKey{
 		E:   e,

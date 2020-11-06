@@ -17,13 +17,18 @@ var ORDER_URL string
 var ACME_DIR string
 
 var privKey *rsa.PrivateKey
+var tlsKey *rsa.PrivateKey
 var challenges []challenge
 
 func init() {
 	pemData, _ := ioutil.ReadFile("data/acme-key")
 	block, _ := pem.Decode([]byte(pemData))
 	privKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
-	// http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	pemData, _ = ioutil.ReadFile("data/tls-key")
+	block, _ = pem.Decode([]byte(pemData))
+	tlsKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
+
 	pemData, _ = ioutil.ReadFile("project/pebble.minica.pem")
 	block, _ = pem.Decode([]byte(pemData))
 	pebbleCert, _ := x509.ParseCertificate(block.Bytes)

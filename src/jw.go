@@ -24,8 +24,8 @@ func (b *byteBuffer) base64URL() string {
 }
 
 func getProtectedHeaderJWK(nonce string, url string) string {
-	e := byteBufferFromUInt(uint64(privKey.PublicKey.E)).base64URL()
-	n := base64.RawURLEncoding.EncodeToString(privKey.PublicKey.N.Bytes())
+	e := byteBufferFromUInt(uint64(tlsKey.PublicKey.E)).base64URL()
+	n := base64.RawURLEncoding.EncodeToString(tlsKey.PublicKey.N.Bytes())
 
 	jwsHeaderJSON, _ := json.Marshal(protectedHeaderJWK{
 		Alg: "RS256",
