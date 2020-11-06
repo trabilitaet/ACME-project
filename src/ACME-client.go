@@ -117,10 +117,10 @@ func getCertificate() {
 			payload, _ := json.Marshal(revCert)
 			fmt.Println(string(payload))
 			postAsGet(nonce, REVOKE_URL, payload, kid)
-		} else {
-			fmt.Println("START HTTPS SERVER------------------")
-			go servHTTPS(newCertificate)
 		}
+		fmt.Println("START HTTPS SERVER------------------")
+		go servHTTPS(newCertificate)
+
 	} else {
 		fmt.Println("CHALLENGE FAILED")
 	}
