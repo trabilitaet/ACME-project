@@ -8,43 +8,36 @@ import (
 
 var url string
 
+var challengeRunning = true
+var r *gin.Engine
+
+func init() {
+	r = gin.Default()
+	go r.Run(":5002")
+}
+
 // TODO:
 // TCP port 5003
 // GET /shutdown -> terminate application
 func waitForShutdown() {
-	r := gin.Default()
-
-	r.GET("/shutdown", func(c *gin.Context) {
+	s := gin.Default()
+	s.GET("/shutdown", func(c *gin.Context) {
 		stop = true
 	})
 
-	r.Run(":5003")
+	s.Run(":5003")
 }
 
-// func servHttp() {
-// 	r := gin.Default()
-// 	r.GET("/ping", func(c *gin.Context) {
-// 		c.JSON(200, gin.H{
-// 			"message": "pong",
-// 		})
-// 	})
+func HTTPChall(token string) {
+	fmt.Println("starting http challenge server")
 
-// 	r.Run(":5002")
-// }
+	keyAuth := craftKeyAuth(token)
+	fmt.Println("TOKEN: ", keyAuth)
+	url := "/.well-known/acme-challenge/" + token
 
-func HTTPChall(urls []string, tokens []string) {
-	r := gin.Default()
-	fmt.Println("starting http server")
+	fmt.Println("serving at: ", url)
+	r.GET(url, func(c *gin.Context) {
+		c.Data(200, "application/octet-stream", []byte(keyAuth))
+	})
 
-	for i, url := range urls {
-		keyAuth := craftKeyAuth(tokens[i])
-		fmt.Println("serving at: ", url[14:])
-		r.GET(url[14:], func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"token": keyAuth,
-			})
-		})
-	}
-
-	r.Run(":5002")
 }

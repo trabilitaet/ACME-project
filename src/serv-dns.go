@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net"
 
@@ -11,7 +13,7 @@ const DNSPort = 11053
 
 // const challPref = "_acme-challenge."
 var prefix = ""
-var keyAuth []string
+var keyAuth256 []string
 
 // TODO:
 // * basic: serve DNS requests DONE
@@ -46,18 +48,21 @@ func craftResponse(query *dns.Msg) dns.Msg {
 	response.MsgHdr = responseHeader
 
 	var rr dns.RR
-	rr = &dns.A{
-		Hdr: dns.RR_Header{Name: query.Question[0].Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 0},
-		A:   net.ParseIP(opts.IPv4_ADDRESS),
+	if prefix == "" {
+		rr = &dns.A{
+			Hdr: dns.RR_Header{Name: query.Question[0].Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 0},
+			A:   net.ParseIP(opts.IPv4_ADDRESS),
+		}
+		response.Answer = append(response.Answer, rr)
+	} else {
+		name := prefix + query.Question[0].Name
+		t := &dns.TXT{
+			Hdr: dns.RR_Header{Name: name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 0},
+			Txt: keyAuth256,
+		}
+		response.Answer = append(response.Extra, t)
 	}
-	response.Answer = append(response.Answer, rr)
 
-	name := prefix + query.Question[0].Name
-	t := &dns.TXT{
-		Hdr: dns.RR_Header{Name: name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 0},
-		Txt: keyAuth,
-	}
-	response.Extra = append(response.Extra, t)
 	return *response
 }
 
@@ -76,17 +81,20 @@ func servDNS() {
 
 		var msg dns.Msg
 		msg.Unpack(packet) //convert to extract headers and flags
-
+		fmt.Println("received request")
+		fmt.Println(msg.String())
 		var response dns.Msg = craftResponse(&msg)
-		fmt.Println("--------response--------")
-		fmt.Println(response.String())
+		// fmt.Println("--------response--------")
+		// fmt.Println(response.String())
 
 		outPacket, _ := response.Pack()
 		udp.WriteTo(outPacket, returnAddr)
 	}
 }
 
-func DNSChall(token []string) {
+func DNSChall(token string) {
 	prefix = "_acme-challenge."
-	keyAuth = craftKeyAuth(token[0])
+	digest := sha256.Sum256([]byte(craftKeyAuth(token)))
+	digest64 := base64.RawURLEncoding.EncodeToString(digest[:])
+	keyAuth256 = append(keyAuth256, digest64)
 }

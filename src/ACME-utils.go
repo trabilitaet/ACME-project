@@ -5,8 +5,11 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -39,7 +42,6 @@ func getNonce() (nonce string) {
 
 func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce string, location string, body []byte) {
 	var protected64 string
-	// fmt.Println("Using kid: ", kid)
 	if kid == "" {
 		fmt.Println("No kid, constructing JWK")
 		protected64 = getProtectedHeaderJWK(nonce, URL)
@@ -58,17 +60,21 @@ func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce s
 	if err != nil {
 		fmt.Println("ERROR posting to: ", URL)
 		fmt.Println(err)
-		fmt.Println("Body:--------------------------")
-		fmt.Println(string(body))
-		return
-	}
-
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Body:--------------------------")
+			fmt.Println(string(body))
+			return newNonce, location, []byte("")
+		}
 		return
 	}
 	newNonce = resp.Header.Get("Replay-Nonce")
 	location = resp.Header.Get("Location")
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return newNonce, location, []byte("")
+	}
+
 	return newNonce, location, body
 }
 
@@ -92,7 +98,7 @@ func requestCert(nonce string, kid string) (newNonce string, orderURL string) {
 	return newNonce, location
 }
 
-func doChallenges(nonce string, kid string, orderURL string) (newNonce string, fin string) {
+func getChallenges(nonce string, kid string, orderURL string) (newNonce string, fin string) {
 	newNonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
 
 	orders := order{}
@@ -100,10 +106,7 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 	fmt.Println("Orders:")
 	// fmt.Println(orders)
 
-	var Tokens []string
-	var URLs []string
 	for index, _ := range orders.Authorizations {
-
 		var authJSON []byte
 		newNonce, _, authJSON = postAsGet(newNonce, orders.Authorizations[index], []byte(""), kid)
 
@@ -113,36 +116,44 @@ func doChallenges(nonce string, kid string, orderURL string) (newNonce string, f
 		// fmt.Println(authorization) //print all challenges
 
 		//select appropriate challenge
-		if opts.PosArgs.CHALLENGE == "dns01" {
-			for _, c := range authorization.Challenges[:] {
-				if c.Type == "dns-01" {
-					fmt.Println(c)
-					Tokens = append(Tokens, c.Token)
-				}
+		for _, c := range authorization.Challenges[:] {
+			if c.Type == "dns-01" && opts.PosArgs.CHALLENGE == "dns01" {
+				challenges = append(challenges, c)
+			}
+			if c.Type == "http-01" && opts.PosArgs.CHALLENGE == "http01" {
+				challenges = append(challenges, c)
 			}
 		}
-		if opts.PosArgs.CHALLENGE == "http01" {
-			for _, c := range authorization.Challenges[:] {
-				if c.Type == "http-01" {
-					fmt.Println(c)
-					Tokens = append(Tokens, c.Token)
-					URLs = append(URLs, c.URL)
-				}
-			}
-		}
+		fmt.Println(challenges)
 	}
-	if opts.PosArgs.CHALLENGE == "dns01" {
-		DNSChall(Tokens)
-	} else {
-		go HTTPChall(URLs, Tokens)
-		//wait until http server started
-		time.Sleep(5 * time.Second)
-	}
-
 	return newNonce, orders.Finalize
 }
 
-func craftKeyAuth(token string) (keyAuth []string) {
+func doChallenge(nonce string, c challenge, kid string) (newNonce string) {
+	// check challenge status
+	// fmt.Println("Challenge Status: ", chall.Status)
+	fmt.Println("Challenge Status: ", c)
+	// if not done, do challenge
+	if c.Type == "dns-01" {
+		// get current challenge
+		DNSChall(c.Token)
+		time.Sleep(5 * time.Second)
+		var body []byte
+		newNonce, _, body = postAsGet(nonce, c.URL, []byte("{}"), kid)
+		fmt.Println("RESPONSE:\n", string(body))
+	} else {
+		HTTPChall(c.Token)
+		//wait until http server started
+		time.Sleep(5 * time.Second)
+		//start challenge
+		var body []byte
+		newNonce, _, body = postAsGet(nonce, c.URL, []byte("{}"), kid)
+		fmt.Println("RESPONSE:\n", string(body))
+	}
+	return newNonce
+}
+
+func craftKeyAuth(token string) (keyAuth string) {
 	e := byteBufferFromUInt(uint64(privKey.PublicKey.E)).base64URL()
 	n := base64.RawURLEncoding.EncodeToString(privKey.PublicKey.N.Bytes())
 
@@ -156,7 +167,32 @@ func craftKeyAuth(token string) (keyAuth []string) {
 	hash := sha256.Sum256(jwkJSON)
 
 	print := base64.RawURLEncoding.EncodeToString(hash[:])
-	token = token + "." + print
-	keyAuth = append(keyAuth, token)
+	keyAuth = token + "." + print
 	return keyAuth
+}
+
+func sendCSR(nonce string, kid string, finalize string) (newNonce string) {
+	template := x509.CertificateRequest{
+		SignatureAlgorithm: x509.SHA256WithRSA,
+		PublicKeyAlgorithm: x509.RSA,
+		PublicKey:          privKey.PublicKey,
+		Subject: pkix.Name{
+			CommonName:         opts.DOMAIN[0],
+			Country:            []string{"CH"},
+			Organization:       []string{"project"},
+			OrganizationalUnit: []string{"acme"},
+			Locality:           []string{"ZH"},
+			Province:           []string{"ZH"},
+		},
+		DNSNames: opts.DOMAIN,
+	}
+
+	//create DER encoded CSR
+	csr, _ := x509.CreateCertificateRequest(rand.Reader, &template, privKey)
+	pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
+
+	csrJSON, _ := json.Marshal(CSRencoded{csr})
+	newNonce, _, body := postAsGet(nonce, finalize, csrJSON, kid)
+	fmt.Println(string(body))
+	return newNonce
 }

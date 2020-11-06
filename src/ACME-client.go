@@ -4,12 +4,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 )
 
 var NEW_ACC_URL string
@@ -18,6 +16,7 @@ var ORDER_URL string
 var ACME_DIR string
 
 var privKey *rsa.PrivateKey
+var challenges []challenge
 
 func init() {
 	pemKey, _ := ioutil.ReadFile("data/acme-key")
@@ -40,84 +39,17 @@ func getCertificate() {
 	nonce, orderURL := requestCert(nonce, kid)
 	fmt.Println(orderURL)
 	fmt.Println("DOING CHALLENGES-------------")
-	nonce, finalize := doChallenges(nonce, kid, orderURL)
+	nonce, finalize := getChallenges(nonce, kid, orderURL)
+
+	for _, challenge := range challenges {
+		nonce = doChallenge(nonce, challenge, kid)
+	}
 
 	fmt.Println(finalize)
 
-	time.Sleep(10 * time.Second)
-	fmt.Println("getting challenge status: ")
-	nonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
-	orders := order{}
-	json.Unmarshal(ordersJSON, &orders)
-	// fmt.Println("Orders:")
-	// fmt.Println(orders)
-	for index, _ := range orders.Authorizations {
-		var authJSON []byte
-		nonce, _, authJSON = postAsGet(nonce, orders.Authorizations[index], []byte(""), kid)
-
-		authorization := authorization{}
-		json.Unmarshal(authJSON, &authorization)
-		fmt.Printf("Challenges for auth %v\n", index)
-		fmt.Println(authorization) //print all challenges
-	}
 	// fmt.Println("SUBMITTING CSR-------------")
-	// template := x509.CertificateRequest{
-	// 	// Raw:                      []byte // Complete ASN.1 DER content (CSR, signature algorithm and signature).
-	// 	// RawTBSCertificateRequest: []byte // Certificate request info part of raw ASN.1 DER content.
-	// 	// RawSubjectPublicKeyInfo:  []byte // DER encoded SubjectPublicKeyInfo.
-	// 	// RawSubject:               []byte // DER encoded Subject.
-	// 	// Version:            int
-	// 	// Signature:          []byte
-	// 	SignatureAlgorithm: x509.SHA256WithRSA,
-	// 	PublicKeyAlgorithm: x509.RSA,
-	// 	PublicKey:          privKey.PublicKey,
-
-	// 	Subject: pkix.Name{
-	// 		CommonName:         opts.DOMAIN[0],
-	// 		Country:            []string{"CH"},
-	// 		Organization:       []string{"project"},
-	// 		OrganizationalUnit: []string{"acme"},
-	// 		Locality:           []string{"ZH"},
-	// 		Province:           []string{"ZH"},
-	// 	},
-
-	// 	// Attributes: []pkix.AttributeTypeAndValueSET
-	// 	// Extensions: []pkix.Extension
-	// 	// ExtraExtensions: []pkix.Extension
-	// 	DNSNames: opts.DOMAIN,
-	// 	// EmailAddresses: []string
-	// 	// IPAddresses:    []net.IP
-	// 	// URIs:           []*url.URL // Go 1.10
-	// }
-
-	// //create DER encoded CSR
-	// csr, _ := x509.CreateCertificateRequest(rand.Reader, &template, privKey)
-	// // pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
-
-	// fmt.Println(kid)
-	// protected := getProtectedHeaderKID(nonce, kid, finalize)
-	// csrJSON, _ := json.Marshal(CSRencoded{csr})
-	// payload := base64.RawURLEncoding.EncodeToString(csrJSON)
-
-	// request := message{
-	// 	Payload:   payload,
-	// 	Protected: protected,
-	// 	Signature: sign([]byte(protected + "." + payload)),
-	// }
-	// reqJSON, _ := json.Marshal(request)
-	// fmt.Println(string(reqJSON))
-	// resp, err := http.Post(finalize, "application/jose+json", bytes.NewReader(reqJSON))
-	// if err != nil {
-	// 	fmt.Println("ERROR posting order")
-	// 	fmt.Println(err)
-	// 	return
-	// }
-	// fmt.Println(resp)
-
-	// body, _ := ioutil.ReadAll(resp.Body)
-	// fmt.Println("Body:")
-	// fmt.Println(string(body))
-	// fmt.Println(string(reqJSON))
+	// time.Sleep(10 * time.Second)
+	// nonce = sendCSR(nonce, kid, finalize)
 
 	//DOWNLOAD CERTIFICATE-------------------------------------
 	// sends a POST-as-GET request to the certificate URL
