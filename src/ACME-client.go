@@ -39,11 +39,11 @@ func ACMEinit() {
 	certpool.AddCert(pebbleCert)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{RootCAs: certpool, ServerName: "pebble"}
 
-	NEW_ACC_URL = "https://" + opts.DIR_URL + ":14000/sign-me-up"
-	NONCE_URL = "https://" + opts.DIR_URL + ":14000/nonce-plz"
+	NEW_ACC_URL = opts.DIR_URL[:19] + ":14000/sign-me-up"
+	NONCE_URL = opts.DIR_URL[:19] + ":14000/nonce-plz"
 	fmt.Println("NONCE_URL:", NONCE_URL)
-	ORDER_URL = "https://" + opts.DIR_URL + ":14000/order-plz"
-	ACME_DIR = "https://" + opts.DIR_URL + ":14000/dir"
+	ORDER_URL = opts.DIR_URL[:19] + ":14000/order-plz"
+	ACME_DIR = opts.DIR_URL[:19] + ":14000/dir"
 }
 
 func getCertificate() {
