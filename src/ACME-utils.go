@@ -134,7 +134,7 @@ func getChallenges(nonce string, kid string) (newNonce string, fin string) {
 func doChallenge(nonce string, c challenge, kid string) (newNonce string) {
 	// check challenge status
 	fmt.Println("Challenge Status: ", c.Status)
-	fmt.Println("Challenge Status: ", c)
+	// fmt.Println("Challenge Status: ", c)
 	// if not done, do challenge
 	if c.Type == "dns-01" {
 		// get current challenge

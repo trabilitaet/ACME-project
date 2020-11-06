@@ -69,25 +69,29 @@ func craftResponse(query *dns.Msg) dns.Msg {
 func servDNS() {
 	addr := net.UDPAddr{
 		Port: DNSPort,
-		IP:   net.ParseIP(opts.IPv4_ADDRESS),
+		IP:   net.ParseIP("0.0.0.0"),
 	}
 	udp, _ := net.ListenUDP("udp", &addr)
 
 	// infinite loop to wait for requests
 	for {
-		packet := make([]byte, 1024)             // binary
-		_, returnAddr, _ := udp.ReadFrom(packet) //blocking call
+		packet := make([]byte, 1024) // binary
+		fmt.Println("received DNS request")
+		len, returnAddr, err := udp.ReadFrom(packet) //blocking call
+		if err != nil || len == 0 {
+			fmt.Println(err)
+		} else {
+			var msg dns.Msg
+			msg.Unpack(packet) //convert to extract headers and flags
+			fmt.Println(msg.String())
+			var response dns.Msg = craftResponse(&msg)
+			fmt.Println("--------response--------")
+			fmt.Println(response.String())
 
-		var msg dns.Msg
-		msg.Unpack(packet) //convert to extract headers and flags
-		fmt.Println("received request")
-		fmt.Println(msg.String())
-		var response dns.Msg = craftResponse(&msg)
-		// fmt.Println("--------response--------")
-		// fmt.Println(response.String())
+			outPacket, _ := response.Pack()
+			udp.WriteTo(outPacket, returnAddr)
+		}
 
-		outPacket, _ := response.Pack()
-		udp.WriteTo(outPacket, returnAddr)
 	}
 }
 
