@@ -53,7 +53,9 @@ func servHTTPS(certificate []byte) {
 	s.GET("/", func(c *gin.Context) {
 		c.Data(200, "application/octet-stream", certificate)
 	})
+
 	for !stop {
-		s.Run("0.0.0.0:5001")
+		s.RunTLS(":5001", "./data/certificate.pem", "./data/acme-key")
+		// s.Run(":5001")
 	}
 }
