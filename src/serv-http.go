@@ -9,11 +9,11 @@ import (
 var url string
 
 var challengeRunning = true
-var r *gin.Engine
+var httpRunner *gin.Engine
 
 func init() {
-	r = gin.Default()
-	go r.Run(":5002")
+	httpRunner = gin.Default()
+	go runner()
 }
 
 // TODO:
@@ -28,6 +28,12 @@ func waitForShutdown() {
 	s.Run(":5003")
 }
 
+func runner() {
+	for !stop {
+		httpRunner.Run(":5002")
+	}
+}
+
 func HTTPChall(token string) {
 	fmt.Println("starting http challenge server")
 
@@ -36,7 +42,7 @@ func HTTPChall(token string) {
 	url := "/.well-known/acme-challenge/" + token
 
 	fmt.Println("serving at: ", url)
-	r.GET(url, func(c *gin.Context) {
+	httpRunner.GET(url, func(c *gin.Context) {
 		c.Data(200, "application/octet-stream", []byte(keyAuth))
 	})
 

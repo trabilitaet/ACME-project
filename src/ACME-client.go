@@ -19,10 +19,16 @@ var privKey *rsa.PrivateKey
 var challenges []challenge
 
 func init() {
-	pemKey, _ := ioutil.ReadFile("data/acme-key")
-	block, _ := pem.Decode([]byte(pemKey))
+	pemData, _ := ioutil.ReadFile("data/acme-key")
+	block, _ := pem.Decode([]byte(pemData))
 	privKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	// http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	pemData, _ = ioutil.ReadFile("project/pebble.minica.pem")
+	block, _ = pem.Decode([]byte(pemData))
+	pebbleCert, _ := x509.ParseCertificate(block.Bytes)
+	certpool := x509.NewCertPool()
+	certpool.AddCert(pebbleCert)
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{RootCAs: certpool, ServerName: "pebble"}
 
 	NEW_ACC_URL = "https://" + opts.DIR_URL + ":14000/sign-me-up"
 	NONCE_URL = "https://" + opts.DIR_URL + ":14000/nonce-plz"
@@ -47,7 +53,7 @@ func getCertificate() {
 
 	fmt.Println(finalize)
 
-	// fmt.Println("SUBMITTING CSR-------------")
+	fmt.Println("SUBMITTING CSR-------------")
 	// time.Sleep(10 * time.Second)
 	// nonce = sendCSR(nonce, kid, finalize)
 

@@ -67,10 +67,9 @@ func craftResponse(query *dns.Msg) dns.Msg {
 }
 
 func servDNS() {
-	//Listen on UDP Port 11053 of localhost
 	addr := net.UDPAddr{
 		Port: DNSPort,
-		IP:   net.ParseIP("127.0.0.1"),
+		IP:   net.ParseIP("0.0.0.0"),
 	}
 	udp, _ := net.ListenUDP("udp", &addr)
 

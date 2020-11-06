@@ -9,7 +9,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -56,6 +55,7 @@ func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce s
 		Signature: sign([]byte(protected64 + "." + payload64)),
 	}
 	reqJSON, _ := json.Marshal(request)
+	fmt.Println("POST: ", string(reqJSON))
 	resp, err := http.Post(URL, "application/jose+json", bytes.NewReader(reqJSON))
 	if err != nil {
 		fmt.Println("ERROR posting to: ", URL)
@@ -189,10 +189,13 @@ func sendCSR(nonce string, kid string, finalize string) (newNonce string) {
 
 	//create DER encoded CSR
 	csr, _ := x509.CreateCertificateRequest(rand.Reader, &template, privKey)
-	pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
+	// pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
 
 	csrJSON, _ := json.Marshal(CSRencoded{csr})
-	newNonce, _, body := postAsGet(nonce, finalize, csrJSON, kid)
+	fmt.Println(string(csrJSON))
+	csr64 := base64.RawURLEncoding.EncodeToString(csrJSON)
+	fmt.Println(csr64)
+	newNonce, _, body := postAsGet(nonce, finalize, []byte(csr64), kid)
 	fmt.Println(string(body))
 	return newNonce
 }
