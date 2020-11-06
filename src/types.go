@@ -74,3 +74,8 @@ type DIR struct {
 	RevokeCert string `json:"revokeCert"`
 	Meta       string `json:"meta"`
 }
+
+type revCertificate struct {
+	Certificate []byte `json:"certificate"`
+	// Reason      int    `json:"reason"`
+}

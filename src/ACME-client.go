@@ -17,6 +17,7 @@ import (
 var NEW_ACC_URL string
 var NONCE_URL string
 var ORDER_URL string
+var REVOKE_URL string
 
 var privKey *rsa.PrivateKey
 var tlsKey *rsa.PrivateKey
@@ -66,6 +67,7 @@ func ACMEinit() {
 	NONCE_URL = dir.NewNonce
 	fmt.Println("NONCE_URL:", NONCE_URL)
 	ORDER_URL = dir.NewOrder
+	REVOKE_URL = dir.RevokeCert
 }
 
 func getCertificate() {
@@ -107,8 +109,18 @@ func getCertificate() {
 		f.WriteString(string(newCertificate))
 		f.Close()
 
-		//START HTTPS SERVER--------------------------------------
-		go servHTTPS(newCertificate)
+		if opts.REVOKATION {
+			fmt.Println("REVOKING CERTIFICATE-------------")
+			derCert, _ := pem.Decode(newCertificate)
+			revCert := revCertificate{derCert.Bytes}
+			// revCert := revCertificate{string(derCert.Bytes), 4}
+			payload, _ := json.Marshal(revCert)
+			fmt.Println(string(payload))
+			postAsGet(nonce, REVOKE_URL, payload, kid)
+		} else {
+			fmt.Println("START HTTPS SERVER------------------")
+			go servHTTPS(newCertificate)
+		}
 	} else {
 		fmt.Println("CHALLENGE FAILED")
 	}
