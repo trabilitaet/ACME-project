@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -24,16 +25,27 @@ var orderURL string
 var certURL string
 
 func ACMEinit() {
-	pemData, _ := ioutil.ReadFile("data/acme-key")
+	privKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+	pemKey := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privKey),
+		},
+	)
+	ioutil.WriteFile("data/acme-key", pemKey, 600)
+
+	tlsKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+	pemKey = pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(tlsKey),
+		},
+	)
+
+	ioutil.WriteFile("data/tls-key", pemKey, 600)
+
+	pemData, _ := ioutil.ReadFile("project/pebble.minica.pem")
 	block, _ := pem.Decode([]byte(pemData))
-	privKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
-
-	pemData, _ = ioutil.ReadFile("data/tls-key")
-	block, _ = pem.Decode([]byte(pemData))
-	tlsKey, _ = x509.ParsePKCS1PrivateKey(block.Bytes)
-
-	pemData, _ = ioutil.ReadFile("project/pebble.minica.pem")
-	block, _ = pem.Decode([]byte(pemData))
 	pebbleCert, _ := x509.ParseCertificate(block.Bytes)
 	certpool := x509.NewCertPool()
 	certpool.AddCert(pebbleCert)
