@@ -69,9 +69,6 @@ func getCertificate() {
 	for _, challenge := range challenges {
 		nonce = doChallenge(nonce, challenge, kid)
 	}
-
-	fmt.Println("SUBMITTING CSR-------------")
-	time.Sleep(2 * time.Second)
 	status := 0
 	for i := 0; i < 15; i++ {
 		nonce, status = getStatus(nonce, kid)
@@ -81,6 +78,8 @@ func getCertificate() {
 		}
 	}
 
+	fmt.Println("SUBMITTING CSR-------------")
+	time.Sleep(2 * time.Second)
 	if status == 1 {
 		nonce = sendCSR(nonce, kid, finalize)
 

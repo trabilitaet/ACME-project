@@ -209,6 +209,10 @@ func getStatus(nonce string, kid string) (newNonce string, status int) {
 	status = 1
 	for _, c := range challenges {
 		fmt.Println("STATUS", c.Status)
+		if c.Status == "invalid" {
+			stop = true
+			break
+		}
 		if c.Status != "valid" {
 			status = 0
 			break
