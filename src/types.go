@@ -21,6 +21,7 @@ type order struct {
 	Identifiers    identifiers `json:"identifiers"`
 	Finalize       string      `json:"finalize"`       // url
 	Authorizations []string    `json:"authorizations"` //urls
+	Certificate    string      `json:"certificate"`
 }
 
 type challenge struct {

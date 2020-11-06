@@ -55,7 +55,7 @@ func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce s
 		Signature: sign([]byte(protected64 + "." + payload64)),
 	}
 	reqJSON, _ := json.Marshal(request)
-	fmt.Println("POST: ", string(reqJSON))
+	// fmt.Println("POST: ", string(reqJSON))
 	resp, err := http.Post(URL, "application/jose+json", bytes.NewReader(reqJSON))
 	if err != nil {
 		fmt.Println("ERROR posting to: ", URL)
@@ -98,14 +98,16 @@ func requestCert(nonce string, kid string) (newNonce string, orderURL string) {
 	return newNonce, location
 }
 
-func getChallenges(nonce string, kid string, orderURL string) (newNonce string, fin string) {
+func getChallenges(nonce string, kid string) (newNonce string, fin string) {
 	newNonce, _, ordersJSON := postAsGet(nonce, orderURL, []byte(""), kid)
 
 	orders := order{}
 	json.Unmarshal(ordersJSON, &orders)
-	fmt.Println("Orders:")
+	certURL = orders.Certificate
+	// fmt.Println("Orders:")
 	// fmt.Println(orders)
 
+	challenges = nil
 	for index, _ := range orders.Authorizations {
 		var authJSON []byte
 		newNonce, _, authJSON = postAsGet(newNonce, orders.Authorizations[index], []byte(""), kid)
@@ -124,7 +126,7 @@ func getChallenges(nonce string, kid string, orderURL string) (newNonce string, 
 				challenges = append(challenges, c)
 			}
 		}
-		fmt.Println(challenges)
+		// fmt.Println(challenges)
 	}
 	return newNonce, orders.Finalize
 }
@@ -193,9 +195,24 @@ func sendCSR(nonce string, kid string, finalize string) (newNonce string) {
 
 	csr64 := base64.RawURLEncoding.EncodeToString(csr)
 	csrJSON, _ := json.Marshal(CSRencoded{csr64})
-	fmt.Println(string(csrJSON))
+	// fmt.Println(string(csrJSON))
 	newNonce, _, body := postAsGet(nonce, finalize, csrJSON, kid)
 	fmt.Println("response:")
 	fmt.Println(string(body))
 	return newNonce
+}
+
+// 0: pending
+// 1: ready
+func getStatus(nonce string, kid string) (newNonce string, status int) {
+	newNonce, _ = getChallenges(nonce, kid)
+	status = 1
+	for _, c := range challenges {
+		// fmt.Println("STATUS", c.Status)
+		if c.Status != "valid" {
+			status = 0
+			break
+		}
+	}
+	return newNonce, status
 }
