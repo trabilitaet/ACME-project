@@ -55,7 +55,7 @@ func postAsGet(nonce string, URL string, payload []byte, kid string) (newNonce s
 		Signature: sign([]byte(protected64 + "." + payload64)),
 	}
 	reqJSON, _ := json.Marshal(request)
-	// fmt.Println("POST: ", string(reqJSON))
+	fmt.Println("POST: ", string(reqJSON))
 	resp, err := http.Post(URL, "application/jose+json", bytes.NewReader(reqJSON))
 	if err != nil {
 		fmt.Println("ERROR posting to: ", URL)
@@ -115,7 +115,7 @@ func getChallenges(nonce string, kid string) (newNonce string, fin string) {
 		authorization := authorization{}
 		json.Unmarshal(authJSON, &authorization)
 		fmt.Printf("Challenges for auth %v\n", index)
-		// fmt.Println(authorization) //print all challenges
+		fmt.Println(authorization) //print all challenges
 
 		//select appropriate challenge
 		for _, c := range authorization.Challenges[:] {
@@ -133,7 +133,7 @@ func getChallenges(nonce string, kid string) (newNonce string, fin string) {
 
 func doChallenge(nonce string, c challenge, kid string) (newNonce string) {
 	// check challenge status
-	// fmt.Println("Challenge Status: ", chall.Status)
+	fmt.Println("Challenge Status: ", chall.Status)
 	fmt.Println("Challenge Status: ", c)
 	// if not done, do challenge
 	if c.Type == "dns-01" {
@@ -208,7 +208,7 @@ func getStatus(nonce string, kid string) (newNonce string, status int) {
 	newNonce, _ = getChallenges(nonce, kid)
 	status = 1
 	for _, c := range challenges {
-		// fmt.Println("STATUS", c.Status)
+		fmt.Println("STATUS", c.Status)
 		if c.Status != "valid" {
 			status = 0
 			break
