@@ -41,6 +41,7 @@ func init() {
 
 	NEW_ACC_URL = "https://" + opts.DIR_URL + ":14000/sign-me-up"
 	NONCE_URL = "https://" + opts.DIR_URL + ":14000/nonce-plz"
+	fmt.Println("NONCE_URL:", NONCE_URL)
 	ORDER_URL = "https://" + opts.DIR_URL + ":14000/order-plz"
 	ACME_DIR = "https://" + opts.DIR_URL + ":14000/dir"
 }
